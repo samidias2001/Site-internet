@@ -427,6 +427,7 @@ body.lang-ar .brand small { text-transform: none; letter-spacing: 0; font-size: 
 /* ===== HEADER RESPONSIVE : évite que le bouton Appel soit coupé sur mobile ===== */
 @media(max-width: 992px) {
   .nav-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  
 }
 
 @media(max-width: 560px) {
@@ -1995,76 +1996,12 @@ function escapeHtml(str) {
 
 
 // ================================================================
-// HIDDEN STAT TRIGGER — Double-click + Long-press on header logo
+// HIDDEN STAT TRIGGER — Double-click on header logo
 // ================================================================
-(function() {
-  const trigger = document.getElementById('brand-logo-trigger');
-  if (!trigger) return;
-
-  let dblClickTimer = null;
-  let longPressTimer = null;
-  let dblClicked = false;
-  const DBL_CLICK_WINDOW = 400;   // ms between two clicks to count as double-click
-  const LONG_PRESS_MIN = 800;       // ms minimum for long press
-
-  function resetState() {
-    dblClicked = false;
-    if (dblClickTimer) { clearTimeout(dblClickTimer); dblClickTimer = null; }
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  }
-
-  // On first click: start double-click window
-  trigger.addEventListener('click', function(e) {
-    if (dblClicked) return; // already in sequence
-
-    if (!dblClickTimer) {
-      // First click — wait for second click
-      dblClickTimer = setTimeout(function() {
-        resetState();
-      }, DBL_CLICK_WINDOW);
-    } else {
-      // Second click within window = double-click detected
-      clearTimeout(dblClickTimer);
-      dblClickTimer = null;
-      dblClicked = true;
-      // Now wait for long press (mousedown on same element)
-    }
-  });
-
-  trigger.addEventListener('mousedown', function(e) {
-    if (!dblClicked) return;
-    longPressTimer = setTimeout(function() {
-      // SUCCESS: double-click + long press detected
-      resetState();
-      openStatModal();
-    }, LONG_PRESS_MIN);
-  });
-
-  trigger.addEventListener('mouseup', function(e) {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  });
-
-  trigger.addEventListener('mouseleave', function(e) {
-    resetState();
-  });
-
-  // Touch support for mobile
-  trigger.addEventListener('touchstart', function(e) {
-    if (!dblClicked) return;
-    longPressTimer = setTimeout(function() {
-      resetState();
-      openStatModal();
-    }, LONG_PRESS_MIN);
-  });
-
-  trigger.addEventListener('touchend', function(e) {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  });
-
-  trigger.addEventListener('touchcancel', function(e) {
-    resetState();
-  });
-})();
+document.getElementById('brand-logo-trigger').addEventListener('dblclick', function(e) {
+  e.preventDefault();
+  openStatModal();
+});
 
 </script>
 </body>
