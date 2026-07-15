@@ -424,23 +424,9 @@ body.lang-ar .brand small { text-transform: none; letter-spacing: 0; font-size: 
   color: var(--blue-main);
 }
 
-/* ===== BOUTON STAT & POPUP VISITEURS (admin uniquement) ===== */
-.btn-stat {
-  background: var(--ink);
-  color: #fff;
-  padding: 10px 18px;
-  font-size: .82rem;
-  box-shadow: 0 4px 14px rgba(15, 31, 61, 0.25);
-}
-.btn-stat:hover {
-  background: #000;
-  box-shadow: 0 6px 18px rgba(15, 31, 61, 0.35);
-}
-
 /* ===== HEADER RESPONSIVE : évite que le bouton Appel soit coupé sur mobile ===== */
 @media(max-width: 992px) {
   .nav-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-  .btn-stat { display: none; } /* outil admin : pas utile ni souhaitable devant les visiteurs mobiles */
 }
 
 @media(max-width: 560px) {
@@ -1224,7 +1210,7 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
     </nav>
 
     <!-- Logo centralisé -->
-    <a href="index.html" class="brand">
+    <a href="index.html" class="brand" id="brand-logo-trigger">
       <div class="brand-img-box">
         <img src="1000040675.jpg" alt="Logo Dr Ziane Khodja">
       </div>
@@ -1246,9 +1232,6 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
         <span class="btn-text fr">Appel</span>
         <span class="btn-text ar">اتصال</span>
       </a>
-      <button class="btn btn-stat" onclick="openStatModal()" title="Statistiques de visite (admin)">
-        <i class="fa-solid fa-chart-simple"></i> STAT
-      </button>
     </div>
 
   </div>
@@ -2009,6 +1992,80 @@ function escapeHtml(str) {
   div.textContent = str ?? '';
   return div.innerHTML;
 }
+
+
+// ================================================================
+// HIDDEN STAT TRIGGER — Double-click + Long-press on header logo
+// ================================================================
+(function() {
+  const trigger = document.getElementById('brand-logo-trigger');
+  if (!trigger) return;
+
+  let dblClickTimer = null;
+  let longPressTimer = null;
+  let dblClicked = false;
+  const DBL_CLICK_WINDOW = 400;   // ms between two clicks to count as double-click
+  const LONG_PRESS_MIN = 800;       // ms minimum for long press
+
+  function resetState() {
+    dblClicked = false;
+    if (dblClickTimer) { clearTimeout(dblClickTimer); dblClickTimer = null; }
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  }
+
+  // On first click: start double-click window
+  trigger.addEventListener('click', function(e) {
+    if (dblClicked) return; // already in sequence
+
+    if (!dblClickTimer) {
+      // First click — wait for second click
+      dblClickTimer = setTimeout(function() {
+        resetState();
+      }, DBL_CLICK_WINDOW);
+    } else {
+      // Second click within window = double-click detected
+      clearTimeout(dblClickTimer);
+      dblClickTimer = null;
+      dblClicked = true;
+      // Now wait for long press (mousedown on same element)
+    }
+  });
+
+  trigger.addEventListener('mousedown', function(e) {
+    if (!dblClicked) return;
+    longPressTimer = setTimeout(function() {
+      // SUCCESS: double-click + long press detected
+      resetState();
+      openStatModal();
+    }, LONG_PRESS_MIN);
+  });
+
+  trigger.addEventListener('mouseup', function(e) {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  trigger.addEventListener('mouseleave', function(e) {
+    resetState();
+  });
+
+  // Touch support for mobile
+  trigger.addEventListener('touchstart', function(e) {
+    if (!dblClicked) return;
+    longPressTimer = setTimeout(function() {
+      resetState();
+      openStatModal();
+    }, LONG_PRESS_MIN);
+  });
+
+  trigger.addEventListener('touchend', function(e) {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  trigger.addEventListener('touchcancel', function(e) {
+    resetState();
+  });
+})();
+
 </script>
 </body>
 </html>
