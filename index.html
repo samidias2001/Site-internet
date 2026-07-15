@@ -437,6 +437,20 @@ body.lang-ar .brand small { text-transform: none; letter-spacing: 0; font-size: 
   box-shadow: 0 6px 18px rgba(15, 31, 61, 0.35);
 }
 
+/* ===== HEADER RESPONSIVE : évite que le bouton Appel soit coupé sur mobile ===== */
+@media(max-width: 992px) {
+  .nav-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .btn-stat { display: none; } /* outil admin : pas utile ni souhaitable devant les visiteurs mobiles */
+}
+
+@media(max-width: 560px) {
+  .brand-text { display: none; } /* garde uniquement le logo rond pour laisser de la place */
+  .brand { padding: 6px 10px; gap: 0; }
+  .lang-toggle { padding: 8px 12px; font-size: .78rem; }
+  .btn-pink { padding: 12px 14px; }
+  .btn-text { display: none; } /* le bouton Appel devient icône seule */
+}
+
 .stat-overlay {
   display: none;
   position: fixed;
@@ -1228,8 +1242,9 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
         <span class="ar">Français</span>
       </button>
       <a class="btn btn-pink" href="tel:+213558456019">
-        <span class="fr"><i class="fa-solid fa-phone"></i> Appel</span>
-        <span class="ar"><i class="fa-solid fa-phone"></i> اتصال </span>
+        <i class="fa-solid fa-phone"></i>
+        <span class="btn-text fr">Appel</span>
+        <span class="btn-text ar">اتصال</span>
       </a>
       <button class="btn btn-stat" onclick="openStatModal()" title="Statistiques de visite (admin)">
         <i class="fa-solid fa-chart-simple"></i> STAT
