@@ -424,6 +424,85 @@ body.lang-ar .brand small { text-transform: none; letter-spacing: 0; font-size: 
   color: var(--blue-main);
 }
 
+/* ===== BOUTON STAT & POPUP VISITEURS (admin uniquement) ===== */
+.btn-stat {
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 18px;
+  font-size: .82rem;
+  box-shadow: 0 4px 14px rgba(15, 31, 61, 0.25);
+}
+.btn-stat:hover {
+  background: #000;
+  box-shadow: 0 6px 18px rgba(15, 31, 61, 0.35);
+}
+
+.stat-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 31, 61, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.stat-overlay.open { display: flex; }
+
+.stat-modal {
+  background: var(--bg-white);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 1000px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.stat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 26px;
+  border-bottom: 1px solid var(--line);
+  background: var(--blue-light);
+}
+.stat-modal-header h3 { margin: 0; color: var(--blue-dark); font-family: 'Outfit', sans-serif; }
+.stat-modal-header .stat-count { color: var(--ink-soft); font-size: .85rem; margin-top: 4px; }
+.stat-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.4rem; color: var(--ink-soft); line-height: 1;
+  padding: 6px;
+}
+.stat-close:hover { color: var(--pink-main); }
+
+.stat-modal-body { padding: 0; overflow-y: auto; }
+.stat-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.stat-table th {
+  position: sticky; top: 0;
+  background: var(--bg); color: var(--ink-soft);
+  text-align: left; padding: 12px 16px; font-weight: 700;
+  border-bottom: 2px solid var(--line); white-space: nowrap;
+}
+.stat-table td {
+  padding: 10px 16px; border-bottom: 1px solid var(--line);
+  color: var(--ink); white-space: nowrap;
+}
+.stat-table tr:hover td { background: var(--blue-light); }
+.stat-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: .72rem; font-weight: 700;
+}
+.stat-badge.mobile { background: #FDF2F6; color: var(--pink-main); }
+.stat-badge.pc { background: #EEF6FF; color: var(--blue-main); }
+
+.stat-empty, .stat-loading, .stat-error {
+  padding: 60px 20px; text-align: center; color: var(--ink-muted);
+}
+.stat-error { color: var(--pink-main); }
+
 /* ===== HERO CENTRÉ MAJESTUEUX ===== */
 .hero {
   position: relative;
@@ -1152,10 +1231,29 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
         <span class="fr"><i class="fa-solid fa-phone"></i> Appel</span>
         <span class="ar"><i class="fa-solid fa-phone"></i> اتصال </span>
       </a>
+      <button class="btn btn-stat" onclick="openStatModal()" title="Statistiques de visite (admin)">
+        <i class="fa-solid fa-chart-simple"></i> STAT
+      </button>
     </div>
 
   </div>
 </header>
+
+<!-- POPUP STATISTIQUES VISITEURS -->
+<div class="stat-overlay" id="statOverlay">
+  <div class="stat-modal">
+    <div class="stat-modal-header">
+      <div>
+        <h3>Statistiques des visiteurs</h3>
+        <div class="stat-count" id="statCount"></div>
+      </div>
+      <button class="stat-close" onclick="closeStatModal()" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="stat-modal-body" id="statBody">
+      <div class="stat-loading">Chargement…</div>
+    </div>
+  </div>
+</div>
 
 <main id="top">
 
@@ -1201,7 +1299,7 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
       <div class="hero-badges">
         <div class="hero-badge"><i class="fa-solid fa-star" style="color: #FFB800;"></i> <span class="fr">5.0/5 sur Google</span><span class="ar">5.0/5 على غوغل</span></div>
         <div class="hero-badge"><i class="fa-solid fa-hospital-user" style="color: var(--blue-main);"></i> <span class="fr">15+ ans d'expérience</span><span class="ar">أكثر من 15 سنة خبرة</span></div>
-        <div class="hero-badge"><i class="fa-regular fa-calendar-check" style="color: var(--blue-main);"></i> <span class="fr">Ouvert 6j/7 (Ven sur RDV)</span><span class="ar">مفتوح 7 أيام (الجمعة بموعد)</span></div>
+        <div class="hero-badge"><i class="fa-regular fa-calendar-check" style="color: var(--blue-main);"></i> <span class="fr">Ouvert 7j/7 (Ven sur RDV)</span><span class="ar">مفتوح 7 أيام (الجمعة بموعد)</span></div>
       </div>
 
     </div>
@@ -1730,6 +1828,172 @@ window.addEventListener('scroll', () => {
   if (window.scrollY > 30) { header.classList.add('scrolled'); }
   else { header.classList.remove('scrolled'); }
 });
+
+// ================================================================
+// TRACKING DES VISITEURS + BOUTON STAT
+// ================================================================
+// ⚠️ Remplace l'URL ci-dessous par l'URL de ton Web App Google Apps Script
+// (voir les instructions de déploiement fournies séparément)
+const STAT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxDKHXCSkQll9maGAO5dSC5EK_DnLbz25OV90nLMHynygIc-z2EPgUuhpsFYVydEx-E/exec";
+
+// --- Identifiant unique par navigateur (persiste entre les visites) ---
+function getVisitorId() {
+  let id = localStorage.getItem('zk_visitor_id');
+  if (!id) {
+    id = 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('zk_visitor_id', id);
+  }
+  return id;
+}
+
+// --- Détection mobile / pc ---
+function detectDevice() {
+  const ua = navigator.userAgent || '';
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(ua) ? 'Mobile' : 'PC';
+}
+
+// --- Enregistrement de la visite (silencieux, ne bloque jamais la page) ---
+// Localisation approximative + opérateur déduits de l'IP (aucune permission demandée au visiteur)
+async function trackVisit() {
+  if (!STAT_WEBAPP_URL || STAT_WEBAPP_URL.includes('COLLE_ICI')) return;
+  try {
+    let ip = '', locationStr = '', isp = '';
+
+    // Service principal : geojs.io (CORS fiable, pas de clé requise)
+    try {
+      const geoRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
+      const geoData = await geoRes.json();
+      ip = geoData.ip || '';
+      const ville = geoData.city || '';
+      const region = geoData.region || '';
+      const pays = geoData.country || '';
+      locationStr = [ville, region, pays].filter(Boolean).join(', ');
+      isp = geoData.organization_name || geoData.organization || '';
+    } catch (err1) {
+      // Service de secours : ipapi.co
+      try {
+        const geoRes2 = await fetch('https://ipapi.co/json/');
+        const geoData2 = await geoRes2.json();
+        ip = geoData2.ip || '';
+        const ville2 = geoData2.city || '';
+        const region2 = geoData2.region || '';
+        const pays2 = geoData2.country_name || '';
+        locationStr = [ville2, region2, pays2].filter(Boolean).join(', ');
+        isp = geoData2.org || '';
+      } catch (err2) {
+        // Dernier recours : juste l'IP, sans localisation
+        try {
+          const ipRes = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipRes.json();
+          ip = ipData.ip || 'inconnue';
+        } catch (err3) { ip = 'inconnue'; }
+      }
+    }
+
+    const payload = {
+      visitorId: getVisitorId(),
+      ip: ip,
+      location: locationStr,
+      isp: isp,
+      device: detectDevice(),
+      userAgent: navigator.userAgent,
+      page: window.location.pathname
+    };
+
+    // Content-Type text/plain pour éviter le preflight CORS avec Apps Script
+    await fetch(STAT_WEBAPP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    // Silencieux : on ne veut jamais gêner l'expérience du visiteur
+    console.warn('Tracking non disponible', err);
+  }
+}
+trackVisit();
+
+// --- Popup STAT (protégée par mot de passe = token du script) ---
+function openStatModal() {
+  const overlay = document.getElementById('statOverlay');
+  overlay.classList.add('open');
+  loadStats();
+}
+function closeStatModal() {
+  document.getElementById('statOverlay').classList.remove('open');
+}
+document.getElementById('statOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'statOverlay') closeStatModal();
+});
+
+async function loadStats() {
+  const body = document.getElementById('statBody');
+  const countEl = document.getElementById('statCount');
+  body.innerHTML = '<div class="stat-loading">Chargement…</div>';
+  countEl.textContent = '';
+
+  if (!STAT_WEBAPP_URL || STAT_WEBAPP_URL.includes('COLLE_ICI')) {
+    body.innerHTML = '<div class="stat-error">⚠️ L\'URL du Web App Google n\'est pas configurée dans le code.</div>';
+    return;
+  }
+
+  const token = prompt("Mot de passe administrateur :");
+  if (token === null) { closeStatModal(); return; }
+
+  try {
+    const res = await fetch(`${STAT_WEBAPP_URL}?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+
+    if (data.error) {
+      body.innerHTML = '<div class="stat-error">❌ Mot de passe incorrect.</div>';
+      return;
+    }
+    if (!Array.isArray(data) || data.length === 0) {
+      body.innerHTML = '<div class="stat-empty">Aucune visite enregistrée pour le moment.</div>';
+      countEl.textContent = '0 visite';
+      return;
+    }
+
+    countEl.textContent = data.length + ' visite' + (data.length > 1 ? 's' : '') + ' enregistrée' + (data.length > 1 ? 's' : '');
+
+    const rows = data.map(v => `
+      <tr>
+        <td>${escapeHtml(v.date)}</td>
+        <td>${escapeHtml(v.visitorId)}</td>
+        <td>${escapeHtml(v.ip)}</td>
+        <td><span class="stat-badge ${v.device === 'Mobile' ? 'mobile' : 'pc'}">${escapeHtml(v.device)}</span></td>
+        <td>${escapeHtml(v.location || '—')}</td>
+        <td>${escapeHtml(v.isp || '—')}</td>
+        <td>${escapeHtml(v.page || '/')}</td>
+      </tr>
+    `).join('');
+
+    body.innerHTML = `
+      <table class="stat-table">
+        <thead>
+          <tr>
+            <th>Date & heure</th>
+            <th>ID visiteur</th>
+            <th>IP</th>
+            <th>Appareil</th>
+            <th>Localisation</th>
+            <th>Opérateur</th>
+            <th>Page</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  } catch (err) {
+    body.innerHTML = '<div class="stat-error">❌ Erreur de connexion au serveur de statistiques.</div>';
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
 </script>
 </body>
 </html>
