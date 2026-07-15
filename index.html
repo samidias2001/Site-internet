@@ -424,18 +424,17 @@ body.lang-ar .brand small { text-transform: none; letter-spacing: 0; font-size: 
   color: var(--blue-main);
 }
 
-/* ===== HEADER RESPONSIVE : évite que le bouton Appel soit coupé sur mobile ===== */
-@media(max-width: 992px) {
-  .nav-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-  
+/* ===== BOUTON STAT & POPUP VISITEURS (admin uniquement) ===== */
+.btn-stat {
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 18px;
+  font-size: .82rem;
+  box-shadow: 0 4px 14px rgba(15, 31, 61, 0.25);
 }
-
-@media(max-width: 560px) {
-  .brand-text { display: none; } /* garde uniquement le logo rond pour laisser de la place */
-  .brand { padding: 6px 10px; gap: 0; }
-  .lang-toggle { padding: 8px 12px; font-size: .78rem; }
-  .btn-pink { padding: 12px 14px; }
-  .btn-text { display: none; } /* le bouton Appel devient icône seule */
+.btn-stat:hover {
+  background: #000;
+  box-shadow: 0 6px 18px rgba(15, 31, 61, 0.35);
 }
 
 .stat-overlay {
@@ -1211,7 +1210,7 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
     </nav>
 
     <!-- Logo centralisé -->
-    <a href="index.html" class="brand" id="brand-logo-trigger">
+    <a href="index.html" class="brand" onclick="return handleLogoClick(event)">
       <div class="brand-img-box">
         <img src="1000040675.jpg" alt="Logo Dr Ziane Khodja">
       </div>
@@ -1229,9 +1228,8 @@ footer p { font-size: .9rem; margin: 0; color: rgba(255, 255, 255, 0.5); }
         <span class="ar">Français</span>
       </button>
       <a class="btn btn-pink" href="tel:+213558456019">
-        <i class="fa-solid fa-phone"></i>
-        <span class="btn-text fr">Appel</span>
-        <span class="btn-text ar">اتصال</span>
+        <span class="fr"><i class="fa-solid fa-phone"></i> Appel</span>
+        <span class="ar"><i class="fa-solid fa-phone"></i> اتصال </span>
       </a>
     </div>
 
@@ -1912,6 +1910,25 @@ async function trackVisit() {
 }
 trackVisit();
 
+// --- Détection discrète du double-clic sur le logo (remplace l'ancien bouton STAT) ---
+let logoClickTimer = null;
+function handleLogoClick(e) {
+  e.preventDefault();
+  if (logoClickTimer !== null) {
+    // Deuxième clic reçu à temps : c'est un double-clic -> ouverture des stats
+    clearTimeout(logoClickTimer);
+    logoClickTimer = null;
+    openStatModal();
+  } else {
+    // Premier clic : on attend de voir si un second clic arrive
+    logoClickTimer = setTimeout(() => {
+      logoClickTimer = null;
+      window.location.href = e.currentTarget.getAttribute('href');
+    }, 300);
+  }
+  return false;
+}
+
 // --- Popup STAT (protégée par mot de passe = token du script) ---
 function openStatModal() {
   const overlay = document.getElementById('statOverlay');
@@ -1993,16 +2010,6 @@ function escapeHtml(str) {
   div.textContent = str ?? '';
   return div.innerHTML;
 }
-
-
-// ================================================================
-// HIDDEN STAT TRIGGER — Double-click on header logo
-// ================================================================
-document.getElementById('brand-logo-trigger').addEventListener('dblclick', function(e) {
-  e.preventDefault();
-  openStatModal();
-});
-
 </script>
 </body>
 </html>
